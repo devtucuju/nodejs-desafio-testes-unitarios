@@ -1,44 +1,37 @@
 import { AppError } from "../../../../shared/errors/AppError";
-
 import { InMemoryUsersRepository } from "../../repositories/in-memory/InMemoryUsersRepository";
-import { CreateUserError } from "./CreateUserError";
 import { CreateUserUseCase } from "./CreateUserUseCase";
-import { ICreateUserDTO } from "./ICreateUserDTO";
 
+let userRepositoryInMemory: InMemoryUsersRepository;
 let createUserUseCase: CreateUserUseCase;
-let inMemoryUsersRepository: InMemoryUsersRepository;
 
-describe("Create User", () => {
-  beforeEach(() => {
-    inMemoryUsersRepository = new InMemoryUsersRepository();
-    createUserUseCase = new CreateUserUseCase(inMemoryUsersRepository);
-  });
-  it("should be able to create a new user", async () => {
-    const createdNewUser: ICreateUserDTO = {
-      name: "XuxadaSilva",
-      email: "xuxa@silva.com",
-      password: "123456",
-    };
-    const newUserCreated = await createUserUseCase.execute(createdNewUser);
-    expect(newUserCreated).toHaveProperty("id");
+describe("CreateUserUseCase", () => {
+  beforeEach(async () => {
+    userRepositoryInMemory = new InMemoryUsersRepository();
+    createUserUseCase = new CreateUserUseCase(userRepositoryInMemory);
   });
 
-  it("should not be able to create a new user with same email", async () => {
-    const createdNewUser: ICreateUserDTO = {
-      name: "XuxadaSilva1",
-      email: "xuxa1@silva.com",
-      password: "123456",
-    };
+  it("Should be able to create a new user", async () => {
+    const user = await createUserUseCase.execute({
+      name: "User Test",
+      email: "email@test.com",
+      password: "1234",
+    });
+    expect(user).toHaveProperty("id");
+  });
 
-    const createDuplicatedUser: ICreateUserDTO = {
-      name: "XuxadaSilva2",
-      email: "xuxa1@silva.com",
-      password: "123456",
-    };
-    await createUserUseCase.execute(createdNewUser);
-
-    await expect(
-      createUserUseCase.execute(createDuplicatedUser)
-    ).rejects.toEqual(new CreateUserError());
+  it("Should not be able to create a user with same email", async () => {
+    expect(async () => {
+      await createUserUseCase.execute({
+        name: "User Test",
+        email: "email@test.com",
+        password: "1234",
+      });
+      await createUserUseCase.execute({
+        name: "User Test",
+        email: "email@test.com",
+        password: "1234",
+      });
+    }).rejects.toBeInstanceOf(AppError);
   });
 });
